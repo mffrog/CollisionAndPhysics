@@ -166,5 +166,16 @@ namespace myTools{
         std::cout << "x = " << v.x << " y = " << v.y << " z = " << v.z << " w = " << v.w << std::endl;
     }
     
+    Vector3 GetRightVector(const Vector3& orientation){
+        return Normalize(cross(orientation, defaultUpVector));
+    }
+    Vector3 GetRightVector(const Vector3& orientation, const Vector3& UpVector){
+        return Normalize(cross(orientation, UpVector));
+    }
+    
+    Vector3 ToVector3(const Vector4& v){
+        return Vector3(v.x,v.y,v.z);
+    }
+    
 }// namespace myTools
 

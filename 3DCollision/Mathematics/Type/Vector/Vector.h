@@ -220,6 +220,10 @@ namespace myTools{
     bool IsParallel(const Vector2& v1, const Vector2& v2);
     bool IsParallel(const Vector3& v1, const Vector3& v2);
     
+    static Vector3 defaultUpVector(0.0f,1.0f,0.0f);
+    Vector3 GetRightVector(const Vector3& orientation);
+    Vector3 GetRightVector(const Vector3& orientation, const Vector3& UpVector);
+    Vector3 ToVector3(const Vector4& v);
     //点
     typedef Vector2 Point2D;
     typedef Vector3 Point;

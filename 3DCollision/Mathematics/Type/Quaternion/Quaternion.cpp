@@ -11,7 +11,7 @@
 
 namespace myTools{
         
-        Vector3 Quaternion::rotate(const Vector3 &v) const{
+        Vector3 Quaternion::rotate(const Vector3 &v) const {
             Quaternion vq(v.x,v.y,v.z,0);
             vq = *this * vq * Quaternion(-this->v.x,-this->v.y,-this->v.z,this->w);
             Vector3 ret;
