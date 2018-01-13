@@ -1,44 +1,58 @@
 //
 //  Camera.h
-//  3DCollision
+//  OpenGL_Practice
 //
-//  Created by Tomoya Fujii on 2018/01/12.
-//  Copyright © 2018年 TomoyaFujii. All rights reserved.
+//  Created by Tomoya Fujii on 2017/10/23.
+//  Copyright © 2017年 TomoyaFujii. All rights reserved.
 //
-
 #ifndef Camera_h
 #define Camera_h
-
 #include "Vector.h"
 #include "Matrix.h"
-
-namespace myTools {
+#include "Transform.h"
+#include "Quaternion.h"
+namespace myTools{
     class Camera {
     public:
-        
-        void SetPositoin(const Vector3& pos){
+        void SetPosition(const Vector3& pos){
             position = pos;
         }
-        void SetDirection(const Vector3& dire){
-            direction = dire;
+        void SetOrientation(const Vector3& ori){
+            orientation = Normalize(ori);
         }
-        void SetUpVector(const Vector3& upV){
-            upVector = upV;
+        void SetUpVector(const Vector3& upv){
+            upVector = Normalize(upv);
         }
         Vector3 GetPosition(){
             return position;
         }
-        Vector3 GetDirection(){
-            return direction;
+        Vector3 GetForward(){
+            return orientation;
+        }
+        Vector3 GetOrientation(){
+            return orientation;
         }
         Vector3 GetUpVector(){
             return upVector;
         }
+        
+        
+        void Rotate(const Quaternion& quat){
+            orientation = quat.rotate(orientation);
+        }
+        
+        Matrix4x4 GetViewMat(){
+            return  CameraViewMat(position, orientation, upVector);
+        }
+        
     private:
         Vector3 position;
-        Vector3 direction;
+        Vector3 orientation;
         Vector3 upVector;
     };
+    
+    
+    //コメント
 }// namespace myTools
-
 #endif /* Camera_h */
+

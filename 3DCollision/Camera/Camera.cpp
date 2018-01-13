@@ -1,9 +1,9 @@
 //
 //  Camera.cpp
-//  3DCollision
+//  OpenGL_Practice
 //
-//  Created by Tomoya Fujii on 2018/01/12.
-//  Copyright © 2018年 TomoyaFujii. All rights reserved.
+//  Created by Tomoya Fujii on 2017/10/23.
+//  Copyright © 2017年 TomoyaFujii. All rights reserved.
 //
 
 #include "Camera.h"
