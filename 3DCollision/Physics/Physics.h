@@ -268,11 +268,37 @@ namespace myTools {
         Vector3 lhsImpulse;
         Vector3 rhsImpulse;
         
+        Vector3 lhsSpringPower;
+        Vector3 rhsSpringPower;
+        
+        Vector3 lhsSpringFix;
+        Vector3 rhsSpringFix;
         if(data.time == 0.0f){
             float spring = 100.0f;
-            lhsImpulse = -spring * data.length * lhsToCenter;
-            rhsImpulse = -spring * data.length * rhsToCenter;
-
+            Vector3 springPower = spring * data.length * data.hitNormal;
+            float tmp = dot(springPower, lhsToCenter);
+            //lhsSpringPower = (tmp > 0 ? -tmp : tmp) * lhsToCenter;
+            lhsImpulse = (tmp > 0 ? -tmp : tmp) * lhsToCenter;
+            tmp = dot(springPower, rhsToCenter);
+            //rhsSpringPower = (tmp > 0 ? -tmp : tmp) * rhsToCenter;
+            rhsImpulse = (tmp > 0 ? -tmp : tmp) * rhsToCenter;
+            
+            Vector3 sinkingVec = data.length * data.hitNormal;
+            tmp = dot(sinkingVec, lhsToCenter);
+            if(tmp > 0){
+                lhsSpringFix = -sinkingVec * 0.5f;
+                rhsSpringFix = sinkingVec * 0.5f;
+            }
+            else {
+                lhsSpringFix = sinkingVec * 0.5f;
+                rhsSpringFix = -sinkingVec * 0.5f;
+            }
+            //lhsImpulse = -spring * data.length * lhsToCenter;
+            //rhsImpulse = -spring * data.length * rhsToCenter;
+            
+            //lhsSpringPower = -spring * data.length * lhsToCenter;
+            //rhsSpringPower = -spring * data.length * rhsToCenter;
+            
             if(dot(normedV1, lhsToCenter) < 0){
                 normedV1.x = normedV1.y = normedV1.z = 0;
             }
@@ -288,13 +314,11 @@ namespace myTools {
         
         Vector3 impulse = (1 + t) * (lhsMass * rhsMass) / (lhsMass + rhsMass) * (normedV2 - normedV1);
         
-//        lhsImpulse +=  impulse;
-//        rhsImpulse += -impulse;
         lhsImpulse += dot( impulse, lhsToCenter) * lhsToCenter;
         rhsImpulse += dot(-impulse, rhsToCenter) * rhsToCenter;
 
         
-        float buf = 0.1f;
+        float buf = 1.0f;
         Vector3 lhsRestrict = lhs.phys.CulcRestrictPower(lhsImpulse) * buf;
         Vector3 rhsRestrict = rhs.phys.CulcRestrictPower(rhsImpulse) * buf;
 
@@ -304,18 +328,24 @@ namespace myTools {
         v1 += lhsImpulse * lhsMassRate;
         v2 += rhsImpulse * rhsMassRate;
         
-        lhs.phys.AddFix(v1 * (delta - hitTime) + lhsVel * hitTime + lhsPos - lhs.phys.GetPrePos(), lhsImpulse * lhsMassRate);
-        rhs.phys.AddFix(v2 * (delta - hitTime) + rhsVel * hitTime + rhsPos - rhs.phys.GetPrePos(), rhsImpulse * rhsMassRate);
+        lhs.phys.AddFix(v1 * (delta - hitTime) + lhsVel * hitTime + lhsPos - lhs.phys.GetPrePos() + lhsSpringFix, lhsImpulse * lhsMassRate + lhsSpringPower);
+        rhs.phys.AddFix(v2 * (delta - hitTime) + rhsVel * hitTime + rhsPos - rhs.phys.GetPrePos() + rhsSpringFix, rhsImpulse * rhsMassRate + rhsSpringPower);
     }
     
     //衝突方向の速度は消す
     template<typename Ty1, typename Ty2>
-    void CulcMapFix(float delta,Ty1& lhs,const Ty2& rhs){
+    void CulcMapFix(float delta,Ty1& lhs,const Ty2& rhs, int index = 0, int index2 = 0, int frame = 0){
+        if( index == 0 && index2 == 9){
+            std::cout << "check items" << frame << std::endl;
+            if (frame > 208) {
+                std::cout << "check" << frame << std::endl;
+            }
+        }
         HitData data = StaticCollision(lhs, rhs);
         if(!data.hit){
             return;
         }
-        
+        StaticCollision(lhs, rhs);
         Vector3 lhsPos = lhs.phys.GetPosition();
         Vector3 lhsVel = CulcVel(lhs.phys);
         Vector3 lhsPreVel = lhs.phys.GetPreVel();
@@ -328,9 +358,10 @@ namespace myTools {
         
         //衝突面方向に進んでいる場合その方向の速度を消す
         float t = dot(data.hitNormal, lhsPreVel);
+        float reflection = 2.0f;
         if(t < 0){
-            lhsPreVel -= t * data.hitNormal;
-            lhsVel -= dot(data.hitNormal, lhsVel) * data.hitNormal;
+            lhsPreVel -= t * data.hitNormal * reflection;
+            lhsVel -= dot(data.hitNormal, lhsVel) * data.hitNormal * reflection;
             lhs.phys.AddRestrictVector(data.hitNormal);
         }
 

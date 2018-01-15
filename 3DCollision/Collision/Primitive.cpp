@@ -41,7 +41,12 @@ namespace myTools {
         CulcNormal();
     }
     std::vector<Point> SquareCollision::GetPoints() const{
-        return std::vector<Point>{p[0],p[1],p[2],p[3]};
+        std::vector<Point> points(4);
+        points[0] = p[0];
+        points[1] = p[1];
+        points[2] = p[2];
+        points[3] = p[3];
+        return points;
     }
     Vector3 SquareCollision::GetNormal() const {
         if(!isCulculated){
@@ -59,14 +64,14 @@ namespace myTools {
     
     std::vector<Point> AABBCollision::GetPoints() const{
         std::vector<Point> ret;
-        ret.push_back(Vector3(min.x,max.y, max.z) + posision);
-        ret.push_back(Vector3(min.x,min.y, max.z) + posision);
-        ret.push_back(Vector3(max.x,min.y, max.z) + posision);
-        ret.push_back(max + posision);
-        ret.push_back(Vector3(min.x,max.y,min.z) + posision);
-        ret.push_back(min + posision);
-        ret.push_back(Vector3(max.x,min.y,min.z) + posision);
-        ret.push_back(Vector3(max.x,max.y,min.z) + posision);
+        ret.push_back(Vector3(min.x,max.y, max.z));
+        ret.push_back(Vector3(min.x,min.y, max.z));
+        ret.push_back(Vector3(max.x,min.y, max.z));
+        ret.push_back(max);
+        ret.push_back(Vector3(min.x,max.y,min.z));
+        ret.push_back(min);
+        ret.push_back(Vector3(max.x,min.y,min.z));
+        ret.push_back(Vector3(max.x,max.y,min.z));
         return ret;
     }
     

@@ -87,7 +87,6 @@ namespace myTools {
     struct AABBCollision {
         Vector3 max;
         Vector3 min;
-        Vector3 posision;
         std::vector<Point> GetPoints() const ;
     };
     

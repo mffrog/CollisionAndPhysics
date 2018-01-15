@@ -42,9 +42,17 @@ namespace myTools {
     }
     bool SupLineLineColl(const Line& line1, const Line& line2, float& t1, float& t2, Vector3& pos){
         if(IsParallel(line1.v, line2.v)){
-            t1 = 0.0f;
-            t2 = 0.0f;
-            return false;
+            if(IsParallel(line1.v, line1.p - line2.p)){
+                t1 = 0.0f;
+                pos = line1.p;
+                t2 = dot(pos - line2.p,line2.v) / line2.v.LengthSq();
+                return true;
+            }
+            else {
+                t1 = 0.0f;
+                t2 = 0.0f;
+                return false;
+            }
         }
         float Dv1v2 = dot(line1.v, line2.v);
         float Dv1v1 = line1.v.LengthSq();
@@ -53,8 +61,8 @@ namespace myTools {
         t1 = (Dv1v2 * dot(line2.v,lineToLine) - Dv2v2 * dot(line1.v, lineToLine)) / (Dv1v1 * Dv2v2 - Dv1v2 * Dv1v2);
         Vector3 pos1 = line1.p + line1.v * t1 ;
         t2 = dot(line2.v, pos1 - line2.p) / Dv2v2;
-        Vector3 pos2 = line2.p + line2.v + t2;
-        if(pos1 == pos2 ){
+        Vector3 pos2 = line2.p + line2.v * t2;
+        if(pos1 == pos2){
             pos = pos1;
             return true;
         }
@@ -890,10 +898,6 @@ namespace myTools {
         return CollisionReturnFlag(s, l);
     }
     
-    //-----------------------------------------------------------------------------
-    //  実装中（ここから）
-    //-----------------------------------------------------------------------------
-    
     CollisionData Collision(const SquareCollision& s, const Line& l){
         PlaneCollision plane(s.p[0],s.GetNormal());
 
@@ -1444,9 +1448,9 @@ namespace myTools {
     
     //CubeAABBCollision and Point
     bool CollisionReturnFlag(const AABBCollision& c, const Point& p){
-        if(c.min.x + c.posision.x <= p.x && p.x <= c.max.x + c.posision.x&&
-           c.min.y + c.posision.y <= p.y && p.y <= c.max.y + c.posision.y &&
-           c.min.z + c.posision.z <= p.z && p.z <= c.max.z + c.posision.z
+        if(c.min.x <= p.x && p.x <= c.max.x &&
+           c.min.y <= p.y && p.y <= c.max.y  &&
+           c.min.z <= p.z && p.z <= c.max.z
            ){
             return true;
         }
@@ -1569,45 +1573,42 @@ namespace myTools {
     
     //CubeAABBCollision and SphereCollision
     bool CollisionReturnFlag(const AABBCollision& cube, const SphereCollision& sphere){
-        //内側判定
-        if(CollisionReturnFlag(cube, sphere.position)){
-            return true;
-        }
-        std::vector<Point> points = cube.GetPoints();
+        Vector3 dist;
+        float xDist;
+        float yDist;
+        float zDist;
 
-        float radiusSq = sphere.radius * sphere.radius;
-        if((sphere.position - points[0]).LengthSq() < radiusSq ||
-           (sphere.position - points[1]).LengthSq() < radiusSq ||
-           (sphere.position - points[2]).LengthSq() < radiusSq ||
-           (sphere.position - points[3]).LengthSq() < radiusSq ||
-           (sphere.position - points[4]).LengthSq() < radiusSq ||
-           (sphere.position - points[5]).LengthSq() < radiusSq ||
-           (sphere.position - points[6]).LengthSq() < radiusSq ||
-           (sphere.position - points[7]).LengthSq() < radiusSq
-           ){
-            return true;
-        }
-        //Cubeの中心からSphereの中心までのベクトルを作ってそのベクトルと交差する面と球の判定をする
-        //TODO : 線分とSquareの判定とSphereとSquareの判定のどっちが軽いか確認する必要あり
-        Vector3 cubePos = cube.posision;
-        Segment toSphere(cubePos, sphere.position - cubePos);
-
-        SquareCollision square[6];
-        square[0].SetPoint(points[0], points[1], points[2], points[3]);
-        square[1].SetPoint(points[3], points[2], points[6], points[7]);
-        square[2].SetPoint(points[7], points[6], points[5], points[4]);
-        square[3].SetPoint(points[4], points[5], points[1], points[0]);
-        square[4].SetPoint(points[4], points[0], points[3], points[7]);
-        square[5].SetPoint(points[1], points[5], points[6], points[2]);
-
-        SquareCollision buf = square[0];
-        for(int i = 1; i < 6; ++i){
-            if(CollisionReturnFlag(square[i],toSphere)){
-                buf = square[i];
+        if(cube.min.x > sphere.position.x || sphere.position.x > cube.max.x){
+            xDist = cube.min.x - sphere.position.x;
+            if(xDist >= 0){
+                dist.x = xDist;
+            }
+            else {
+                dist.x = sphere.position.x - cube.max.x;
             }
         }
         
-        return CollisionReturnFlag(buf, sphere);
+        if(cube.min.y > sphere.position.y || sphere.position.y > cube.max.y){
+            yDist = cube.min.y - sphere.position.y;
+            if(yDist >= 0){
+                dist.y = yDist;
+            }
+            else {
+                dist.y = sphere.position.y - cube.max.y;
+            }
+        }
+        
+        if(cube.min.z > sphere.position.z || sphere.position.z > cube.max.z){
+            zDist = cube.min.z - sphere.position.z;
+            if(zDist >= 0){
+                dist.z = zDist;
+            }
+            else {
+                dist.z = sphere.position.z - cube.max.z;
+            }
+        }
+        
+        return dist.LengthSq() <= sphere.radius * sphere.radius;
     }
     bool CollisionReturnFlag(const SphereCollision& s, const AABBCollision& c){
         return CollisionReturnFlag(c, s);
@@ -1615,28 +1616,151 @@ namespace myTools {
     
     //CubeAABBCollision and CapsuleCollision
     bool CollisionReturnFlag(const AABBCollision& cube, const CapsuleCollision& capsule){
-        //間違ってる
-        //内側判定
-        if(CollisionReturnFlag(cube, capsule.s.p)){
+        Vector3 capPos(capsule.s.p);
+        Vector3 capEndPos(capsule.s.GetEndPoint());
+        if(CollisionReturnFlag(cube, capsule.s.p) || CollisionReturnFlag(cube, capsule.s.p + capsule.s.v)){
             return true;
         }
-        //TODO: もっといい方法を考える
+        Vector3 x(1.0f,0.0f,0.0f);
+        Vector3 y(0.0f,1.0f,0.0f);
+        Vector3 z(0.0f,0.0f,1.0f);
+
         std::vector<Point> points = cube.GetPoints();
         
-        SquareCollision square[6];
-        square[0].SetPoint(points[0], points[1], points[2], points[3]);
-        square[1].SetPoint(points[3], points[2], points[6], points[7]);
-        square[2].SetPoint(points[7], points[6], points[5], points[4]);
-        square[3].SetPoint(points[4], points[5], points[1], points[0]);
-        square[4].SetPoint(points[4], points[0], points[3], points[7]);
-        square[5].SetPoint(points[1], points[5], points[6], points[2]);
+        float t;
+        Vector3 pos;
+        PlaneCollision planeTmp(cube.min,x);
+        Segment segTmp(points[4],points[5] - points[4]);
+        Segment castSeg[3];
         
-        return CollisionReturnFlag(square[0], capsule) ||
-        CollisionReturnFlag(square[1], capsule) ||
-        CollisionReturnFlag(square[2], capsule) ||
-        CollisionReturnFlag(square[3], capsule) ||
-        CollisionReturnFlag(square[4], capsule) ||
-        CollisionReturnFlag(square[5], capsule) ;
+        Vector3 castEnd;
+        auto makeCastSeg = [&](const PlaneCollision& plane, Segment& castSeg){
+            castSeg.p = CastToPlane(plane, capPos);
+            castEnd = CastToPlane(plane, capEndPos);
+            castSeg.v = castEnd - castSeg.p;
+        };
+        
+        makeCastSeg(planeTmp,castSeg[0]);
+        planeTmp.normal = y;
+        makeCastSeg(planeTmp,castSeg[1]);
+        planeTmp.normal = z;
+        makeCastSeg(planeTmp,castSeg[2]);
+
+        planeTmp.normal = -x;
+        
+        float capRadSq = capsule.radius * capsule.radius;
+        
+        //左面
+        if(SupPlaneSegmentDist(planeTmp, capsule.s, t, pos) <= capsule.radius ){
+            if(DistanceSq(castSeg[2], segTmp) <= capsule.radius * capsule.radius){
+                segTmp.p = points[5];
+                segTmp.v = points[1] - points[5];
+                if(DistanceSq(castSeg[1], segTmp) <= capsule.radius * capsule.radius){
+                    if(CollisionReturnFlag(SquareCollision(points[4], points[5], points[1], points[0]), capsule)){
+                        return true;
+                    }
+                }
+            }
+        }
+        planeTmp.normal = -y;
+        //下面
+        if(SupPlaneSegmentDist(planeTmp, capsule.s, t, pos) <= capsule.radius){
+            segTmp.p = points[1];
+            segTmp.v = points[5] - points[1];
+            if(DistanceSq(castSeg[0], segTmp) <= capRadSq){
+                segTmp.p = points[5];
+                segTmp.v = points[6] - segTmp.p;
+                if(DistanceSq(castSeg[2], segTmp) <= capRadSq){
+                    if(CollisionReturnFlag(capsule,SquareCollision(points[1], points[5], points[6], points[2]))){
+                        return true;
+                    }
+                }
+            }
+        }
+        planeTmp.normal = -z;
+        //後ろ面
+        if( SupPlaneSegmentDist(planeTmp, capsule.s, t, pos) <= capsule.radius){
+            segTmp.p = points[4];
+            segTmp.v = points[5] - points[4];
+            if(DistanceSq(castSeg[0], segTmp) <= capRadSq){
+                segTmp.p = points[6];
+                segTmp.v = points[5] - points[6];
+                if(DistanceSq(castSeg[1], segTmp) <= capRadSq){
+                    if(CollisionReturnFlag(capsule,SquareCollision(points[7], points[6], points[5], points[4]))){
+                        return true;
+                    }
+                }
+            }
+        }
+        planeTmp.p = cube.max;
+        planeTmp.normal = x;
+        //右面
+        if(SupPlaneSegmentDist(planeTmp, capsule.s, t, pos) <= capsule.radius){
+            segTmp.p = points[6];
+            segTmp.v = points[7] - points[6];
+            if(DistanceSq(castSeg[2], segTmp) <= capRadSq){
+                segTmp.p = points[2];
+                segTmp.v = points[6] - points[2];
+                if(DistanceSq(castSeg[1], segTmp) <= capRadSq){
+                    if(CollisionReturnFlag(SquareCollision(points[3], points[2], points[6], points[7]), capsule)){
+                        return true;
+                    }
+                }
+            }
+        }
+        planeTmp.normal = y;
+        //上面
+        if(SupPlaneSegmentDist(planeTmp, capsule.s, t, pos) <= capsule.radius){
+            segTmp.p = points[4];
+            segTmp.v = points[0] - segTmp.p;
+            if(DistanceSq(castSeg[0], segTmp) <= capRadSq){
+                segTmp.p = points[4];
+                segTmp.v = points[7] - segTmp.p;
+                if(DistanceSq(castSeg[2], segTmp) <= capRadSq){
+                    if(CollisionReturnFlag(capsule,SquareCollision(points[4], points[0], points[3], points[7]))){
+                        return true;
+                    }
+                }
+            }
+        }
+        planeTmp.normal = z;
+        //前面
+        if(SupPlaneSegmentDist(planeTmp, capsule.s, t, pos) <= capsule.radius){
+            segTmp.p = points[0];
+            segTmp.v = points[1] - segTmp.p;
+            if(DistanceSq(castSeg[0], segTmp) <= capRadSq){
+                segTmp.p = points[1];
+                segTmp.v = points[2] - segTmp.p;
+                if(DistanceSq(castSeg[1], segTmp) <= capRadSq){
+                    if(CollisionReturnFlag(capsule,SquareCollision(points[0], points[1], points[2], points[3]))){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    
+//        //内側判定
+//        if(CollisionReturnFlag(cube, capsule.s.p)){
+//            return true;
+//        }
+//        //TODO: もっといい方法を考える
+//        std::vector<Point> points = cube.GetPoints();
+//
+//        SquareCollision square[6];
+//        square[0].SetPoint(points[0], points[1], points[2], points[3]);
+//        square[1].SetPoint(points[3], points[2], points[6], points[7]);
+//        square[2].SetPoint(points[7], points[6], points[5], points[4]);
+//        square[3].SetPoint(points[4], points[5], points[1], points[0]);
+//        square[4].SetPoint(points[4], points[0], points[3], points[7]);
+//        square[5].SetPoint(points[1], points[5], points[6], points[2]);
+//
+//        return CollisionReturnFlag(square[0], capsule) ||
+//        CollisionReturnFlag(square[1], capsule) ||
+//        CollisionReturnFlag(square[2], capsule) ||
+//        CollisionReturnFlag(square[3], capsule) ||
+//        CollisionReturnFlag(square[4], capsule) ||
+//        CollisionReturnFlag(square[5], capsule) ;
     }
     bool CollisionReturnFlag(const CapsuleCollision& capsule, const AABBCollision& cube){
         return CollisionReturnFlag(cube, capsule);

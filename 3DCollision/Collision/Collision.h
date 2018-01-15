@@ -89,11 +89,10 @@ namespace myTools {
     //Segment and Plane Distance
     float Distance(const Segment& segment, const PlaneCollision& plane);
     float Distance(const PlaneCollision& plane, const Segment& segment);
-    
+
     /**
      * @tips    return Orthogonal projection
      */
-    
     Vector3 CastToLine(const Line& line, const Point& point);
     Vector3 CastToLine(const Point& point, const Line& line);
 
@@ -167,12 +166,6 @@ namespace myTools {
     CollisionData Collision(const SquareCollision& square, const Segment& segment);
     CollisionData Collision(const Segment& segment, const SquareCollision& square);
     
-    
-    //-----------------------------------------------------------------------------
-    //  実装中（start）
-    //-----------------------------------------------------------------------------
-    
-    
     bool CollisionReturnFlag(const SquareCollision& square, const SphereCollision& sphere);
     bool CollisionReturnFlag(const SphereCollision& sphere, const SquareCollision& square);
     
@@ -184,9 +177,6 @@ namespace myTools {
     bool CollisionReturnFlag(const SquareCollision& square, const CapsuleCollision& capsule);
     bool CollisionReturnFlag(const CapsuleCollision& capsule, const SquareCollision& square);
     
-    //-----------------------------------------------------------------------------
-    //  実装中（end）
-    //-----------------------------------------------------------------------------
     //SphereCollision and SphereCollision
     bool CollisionReturnFlag(const SphereCollision& sphere1, const SphereCollision& sphere2);
     

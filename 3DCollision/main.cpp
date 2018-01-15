@@ -365,8 +365,8 @@ int main(int argc, const char * argv[]) {
 //    drawer.AddMesh(sphere);
     //SphereCollision sphereColl(1.0f,sphereData.phys.GetPosition());
 
-    srand((unsigned int)time(NULL));
-    //srand(70);
+    //srand((unsigned int)time(NULL));
+    srand(70);
     
     Sphere* buf;
     std::vector<Sphere*> spheres;
@@ -393,18 +393,19 @@ int main(int argc, const char * argv[]) {
     
     Vector3 sPos;
     
-    static float threshold = 200.0f;
+    static float threshold = 50.0f;
     static float size = 2.5f;
     
     float radius;
     
     bool useZ = true;
-    
+    int num = 22;
+
     DomeCollision dome;
     dome.minRadius = threshold * 0.8;
     dome.maxRadius = threshold + 80;
     
-    Vector4 hitColor(.0f,.0f,0.0f,.0f);
+    Vector4 hitColor(1.0f,1.0f,0.0f,1.0f);
     Vector4 defaultColor(1.0f,1.0f,1.0f,1.0f);
     
     cBuf = new CapsuleMesh(4);
@@ -417,7 +418,7 @@ int main(int argc, const char * argv[]) {
     drawer.AddMesh(cBuf);
     sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold : 0.0f);
     capsuleData.phys.SetPosition(sPos,false);
-    capsuleData.phys.SetVelocity(Vector3(pmRandom(), 0.0f, useZ ? pmRandom() : 0.0f) * 10.0f);
+    capsuleData.phys.SetVelocity(Vector3(pmRandom(), 0.0f, useZ ? pmRandom() : 0.0f) * 15.0f);
     capsuleData.phys.SetMass(radius * 5.0f);
     capsuleData.collision.s.p = sPos;
     capsuleData.collision.s.v = len;
@@ -436,16 +437,19 @@ int main(int argc, const char * argv[]) {
     sPos = Vector3(0.0f,0.0f,0.0f);
     capsuleData.phys.SetPosition(sPos,false);
     //capsuleData.phys.SetVelocity(Vector3(pmRandom(), 0.0f, useZ ? pmRandom() : 0.0f) * 10.0f);
-    capsuleData.phys.SetMass(radius * 1000.0f);
+    capsuleData.phys.SetMass(radius * 10.0f);
     capsuleData.collision.s.p = sPos;
     capsuleData.collision.s.v = len;
     capsuleData.collision.radius = radius;
     capDatas.push_back(capsuleData);
     
-    int num = 300;
     
+    std::vector<Cube*> cubeMeshes;
+    std::vector<AABBCollision> cubeCollisions;
+    Cube* cubePointer;
+    AABBCollision cubeCollBuf;
     for(int i = 0; i < num; ++i){
-//        cBuf = new CapsuleMesh(4);
+//        cBuf = new CapsuleMesh(3);
 //        radius = size ;//* (random() + 1);
 //        cBuf->SetRadius(radius);
 //        //len = Vector3(pmRandom(),pmRandom(),useZ ? pmRandom() : 0.0f) * 5.0f;
@@ -455,12 +459,24 @@ int main(int argc, const char * argv[]) {
 //        drawer.AddMesh(cBuf);
 //        sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold : 0.0f);
 //        capsuleData.phys.SetPosition(sPos,false);
-//        capsuleData.phys.SetVelocity(Vector3(pmRandom(), 0.0f, useZ ? pmRandom() : 0.0f) * 10.0f);
+//        capsuleData.phys.SetVelocity(Vector3(pmRandom(), pmRandom(), useZ ? pmRandom() : 0.0f) * 10.0f);
 //        capsuleData.phys.SetMass(radius * 5.0f);
 //        capsuleData.collision.s.p = sPos;
 //        capsuleData.collision.s.v = len;
 //        capsuleData.collision.radius = radius;
 //        capDatas.push_back(capsuleData);
+        
+        cubePointer = new Cube();
+        sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold : 0.0f);
+        float cubeSize = size * (random()) * 10;
+        Vector3 cubeWid(random() * cubeSize,random() * cubeSize, random() * cubeSize);
+        cubePointer->SetScale(cubeWid);
+        cubePointer->SetPosition(sPos);
+        cubeMeshes.push_back(cubePointer);
+        drawer.AddMesh(cubePointer);
+        cubeCollBuf.max = cubeWid + sPos;
+        cubeCollBuf.min = -cubeWid + sPos;
+        cubeCollisions.push_back(cubeCollBuf);
         
         float rate = 0.8f;
         buf = new Sphere(8);
@@ -484,7 +500,7 @@ int main(int argc, const char * argv[]) {
  
     
     Camera camera;
-    camera.SetPosition(Vector3(0.0f,0.0f,100.0f));
+    camera.SetPosition(Vector3(0.0f,100.0f,100.0f));
     camera.SetOrientation(Normalize(Vector3() - camera.GetPosition()));
     camera.SetUpVector(Vector3(0.0f,1.0f,0.0f));
 //    Vector3 cameraPosition = {0,0,100};
@@ -587,7 +603,7 @@ int main(int argc, const char * argv[]) {
     };
     
     KeyCallback::keyfunc = keyFunc;
-
+    int dataIndex = 0;
     static bool cursorMode = true;
     bool jumpRest = false;
     auto cameraFunc = [&]{
@@ -596,39 +612,40 @@ int main(int argc, const char * argv[]) {
         float power = 50;
         float jumpPower = 180;
         if(flags[Key::W]){
-//            camera.SetPosition(cameraPos + cameraOri * speed) ;
-            capDatas[1].phys.AddAcceleration(cameraOri * speed * power);
+            cameraPos += cameraOri * speed;
+            //capDatas[1].phys.AddAcceleration(cameraOri * speed * power);
         }
         if(flags[Key::S]){
-//            camera.SetPosition(cameraPos - cameraOri * speed);
-            capDatas[1].phys.AddAcceleration(-cameraOri * speed * power);
+            cameraPos -= cameraOri * speed;
+            //capDatas[1].phys.AddAcceleration(-cameraOri * speed * power);
 
         }
         if(flags[Key::D]){
-//            camera.SetPosition(cameraPos + GetRightVector(cameraOri) * speed);
-            capDatas[1].phys.AddAcceleration(GetRightVector(cameraOri) * speed * power);
+            cameraPos += GetRightVector(cameraOri) * speed;
+            //capDatas[1].phys.AddAcceleration(GetRightVector(cameraOri) * speed * power);
         }
         if(flags[Key::A]){
-//            camera.SetPosition(cameraPos - GetRightVector(cameraOri) * speed);
-            capDatas[1].phys.AddAcceleration(-GetRightVector(cameraOri) * speed * power);
+            cameraPos -= GetRightVector(cameraOri) * speed;
+            //capDatas[1].phys.AddAcceleration(-GetRightVector(cameraOri) * speed * power);
         }
         
         if(KEY_FLAG(E)){
-            //cameraPos.y += speed;
-            //camera.SetPosition(cameraPos);
-            if(!jumpRest){
-                capDatas[1].phys.AddAcceleration(Vector3(0.0f,1.0f,0.0f) * jumpPower * power);
-                jumpRest = true;
-            }
+            cameraPos.y += speed;
+            //capDatas[1].phys.AddAcceleration(Vector3(0,1,0) * speed * power);
+
+//            if(!jumpRest){
+//                capDatas[1].phys.AddAcceleration(Vector3(0.0f,1.0f,0.0f) * jumpPower * power);
+//                jumpRest = true;
+//            }
         }
         else {
             jumpRest = false;
         }
         if(KEY_FLAG(Q)){
-            //cameraPos.y -= speed;
-            //camera.SetPosition(cameraPos);
+            cameraPos.y -= speed;
+            //capDatas[1].phys.AddAcceleration(Vector3(0,-1,0) * speed * power);
         }
-        
+        camera.SetPosition(cameraPos);
         if(KEY_FLAG(UP) && cursorMode){
             Quaternion rotate = MakeQuat(GetRightVector(cameraOri), rad);
             cameraOri = rotate.rotate(cameraOri);
@@ -674,13 +691,14 @@ int main(int argc, const char * argv[]) {
         
         if(KEY_FLAG(SPACE)){
             if(defence){
-                mode1 = !mode1;
-                if(mode1){
-                    drawer.LineMode();
-                }
-                else {
-                    drawer.PolygonMode();
-                }
+                ++dataIndex;
+//                mode1 = !mode1;
+//                if(mode1){
+//                    drawer.LineMode();
+//                }
+//                else {
+//                    drawer.PolygonMode();
+//                }
                 defence = false;
             }
         }
@@ -747,8 +765,8 @@ int main(int argc, const char * argv[]) {
     float radX = M_PI / 6 / 400;
     float radY = M_PI_4 * 0.5 / 300;
     
-    float cameraRotateXSensitive =  0.1f;
-    float cameraRotateYSensitive = 0.1f;
+    float cameraRotateXSensitive = 1.0f;
+    float cameraRotateYSensitive = 1.0f;
     
     Matrix4x4 fromWindowToWorld;
 
@@ -907,63 +925,66 @@ int main(int argc, const char * argv[]) {
     
     std::vector<HitPair<SphereCollision, SphereCollision>> spherePairs;
 
-    
-    AABBCollision walls[6] ;
-    walls[0].max = Vector3(1,threshold,threshold);
-    walls[0].min = Vector3(-1,-threshold,-threshold);
-    walls[0].posision.x = threshold;
-    walls[1].max = Vector3(1,threshold,threshold);
-    walls[1].min = Vector3(-1,-threshold,-threshold);
-    walls[1].posision.x = -threshold;
-    
-    walls[2].max = Vector3(threshold,1,threshold);
-    walls[2].min = Vector3(-threshold,-1,-threshold);
-    walls[2].posision.y = threshold;
-    walls[3].max = Vector3(threshold,1,threshold);
-    walls[3].min = Vector3(-threshold,-1,-threshold);
-    walls[3].posision.y = -threshold;
-    
-    walls[4].max = Vector3(threshold,threshold,1);
-    walls[4].min = Vector3(-threshold,-threshold,-1);
-    walls[4].posision.z = threshold;
-    walls[5].max = Vector3(threshold,threshold,1);
-    walls[5].min = Vector3(-threshold,-threshold,-1);
-    walls[5].posision.z = -threshold;
-
-//    walls[6].max = Vector3( threshold * 0.5f, 1, threshold);
-//    walls[6].min = Vector3(-threshold * 0.5f,-1,-threshold);
-//    walls[6].posision = Vector3(threshold * 0.5f, 0.0f, 0.0f);
-    
-//    walls[7].max = Vector3(threshold,1,threshold);
-//    walls[7].min = Vector3(-threshold,-1,-threshold);
-//    walls[7].posision = Vector3(0,threshold * 0.5,0.0);
-    
-    
     Cube* cubes[6];
+
+    AABBCollision walls[6] ;
+    Vector3 cubePos(threshold,0.0f,0.0f);
+    walls[0].max = Vector3(1,threshold,threshold) + cubePos;
+    walls[0].min = Vector3(-1,-threshold,-threshold) + cubePos;
     cubes[0] = new Cube();
     cubes[0]->SetScale(Vector3(1,threshold, threshold));
-    cubes[0]->SetPosition(walls[0].posision);
+    cubes[0]->SetPosition(cubePos);
     drawer.AddMesh(cubes[0]);
+
+    cubePos.x = -threshold;
+    walls[1].max = Vector3(1,threshold,threshold) + cubePos;
+    walls[1].min = Vector3(-1,-threshold,-threshold) + cubePos;
     cubes[1] = new Cube();
     cubes[1]->SetScale(Vector3(1,threshold,threshold));
-    cubes[1]->SetPosition(walls[1].posision);
+    cubes[1]->SetPosition(cubePos);
     drawer.AddMesh(cubes[1]);
+    
+    cubePos = Vector3(0.0f,threshold,0.0f);
+    walls[2].max = Vector3(threshold,1,threshold) + cubePos;
+    walls[2].min = Vector3(-threshold,-1,-threshold) + cubePos;
     cubes[2] = new Cube();
     cubes[2]->SetScale(Vector3(threshold,1,threshold));
-    cubes[2]->SetPosition(walls[2].posision);
+    cubes[2]->SetPosition(cubePos);
     drawer.AddMesh(cubes[2]);
+    
+    cubePos *= -1;
+    walls[3].max = Vector3(threshold,1,threshold) + cubePos;
+    walls[3].min = Vector3(-threshold,-1,-threshold) + cubePos;
     cubes[3] = new Cube();
     cubes[3]->SetScale(Vector3(threshold,1,threshold));
-    cubes[3]->SetPosition(walls[3].posision);
+    cubes[3]->SetPosition(cubePos);
     drawer.AddMesh(cubes[3]);
+    
+    cubePos = Vector3(0.0f,0.0f,threshold);
+    walls[4].max = Vector3(threshold,threshold,1) + cubePos;
+    walls[4].min = Vector3(-threshold,-threshold,-1) + cubePos;
     cubes[4] = new Cube();
     cubes[4]->SetScale(Vector3(threshold,threshold,1));
-    cubes[4]->SetPosition(walls[4].posision);
+    cubes[4]->SetPosition(cubePos);
     drawer.AddMesh(cubes[4]);
+    
+    cubePos *= -1;
+    walls[5].max = Vector3(threshold,threshold,1) + cubePos;
+    walls[5].min = Vector3(-threshold,-threshold,-1) + cubePos;
     cubes[5] = new Cube();
     cubes[5]->SetScale(Vector3(threshold,threshold,1));
-    cubes[5]->SetPosition(walls[5].posision);
+    cubes[5]->SetPosition(cubePos);
     drawer.AddMesh(cubes[5]);
+    
+//    walls[6].max = Vector3( threshold * 0.5f, 1, threshold) + cubePos;
+//    walls[6].min = Vector3(-threshold * 0.5f,-1,-threshold) + cubePos;
+//    walls[6].posision = Vector3(threshold * 0.5f, 0.0f, 0.0f);
+    
+//    walls[7].max = Vector3(threshold,1,threshold) + cubePos;
+//    walls[7].min = Vector3(-threshold,-1,-threshold) + cubePos;
+//    walls[7].posision = Vector3(0,threshold * 0.5,0.0);
+    
+
 //    cubes[6] = new Cube();
 //    cubes[6]->SetScale(Vector3(threshold * 0.5f, 1.0f, threshold));
 //    cubes[6]->SetPosition(walls[6].posision);
@@ -979,6 +1000,7 @@ int main(int argc, const char * argv[]) {
         float delta = 1.0f / 60.0f;
         
         Vector3 gravity(0.0f,-9.8f * 15.0f,0.0f);
+        gravity = Vector3();
         for(auto& data : sphereDatas){
             data.phys.AddAcceleration(gravity);
             data.phys.Update(delta, true);
@@ -1121,11 +1143,11 @@ int main(int argc, const char * argv[]) {
         splitter[8].Clear();
         
         
-//        for(int i = 0; i < sphereDatas.size(); ++i){
-//            for(int j = i + 1; j < sphereDatas.size(); ++j){
-//                CulcFix(delta, sphereDatas[i], sphereDatas[j]);
-//            }
-//        }
+        for(int i = 0; i < sphereDatas.size(); ++i){
+            for(int j = i + 1; j < sphereDatas.size(); ++j){
+                CulcFix(delta, sphereDatas[i], sphereDatas[j]);
+            }
+        }
 
         for(int i = 0; i < capDatas.size(); ++i){
             for(int j = i + 1; j < capDatas.size(); ++j){
@@ -1213,95 +1235,56 @@ int main(int argc, const char * argv[]) {
 //        }
         
         
-        
-//        static float reflection = 0.25f;
-//        Vector3 pos;
-//        Vector3 vel;
-//        for(auto& data : sphereDatas){
-//            pos = data.phys.GetPosition();
-//            vel = data.phys.GetVelocity();
-//            if(pos.x < -threshold){
-//                vel.x = fabsf(vel.x) * reflection;
-//                data.phys.AddRestrictVector(Vector3(1.0f,0.0f,0.0f));
-//                pos.x += (-threshold - pos.x);// * 2.0f;
-//            } else if( threshold < pos.x){
-//                vel.x = fabsf(vel.x) * -reflection;
-//                data.phys.AddRestrictVector(Vector3(-1.0f,0.0f,0.0f));
-//                pos.x += (threshold - pos.x);// * 2.0f;
-//
-//            }
-//            if(pos.y < -threshold){
-//                vel.y = fabsf(vel.y) * reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,1.0f,0.0f));
-//                pos.y += (-threshold - pos.y);// * 2.0f;
-//            } else if( threshold < pos.y){
-//                vel.y = fabsf(vel.y) * -reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,-1.0f,0.0f));
-//                pos.y += (threshold - pos.y);// * 2.0f;
-//            }
-//            if(pos.z < -threshold){
-//                vel.z = fabsf(vel.z) * reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,0.0f,1.0f));
-//                pos.z += (-threshold - pos.z);// * 2.0f;
-//            } else if( threshold < pos.z){
-//                vel.z = fabsf(vel.z) * -reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,0.0f,-1.0f));
-//                pos.z += ( threshold - pos.z);// * 2.0f;
-//            }
-//            data.phys.SetPosition(pos,false);
-//            data.phys.SetVelocity(vel);
-//        }
-//
-//        for(auto& data : capDatas){
-//            pos = data.phys.GetPosition();
-//            vel = data.phys.GetVelocity();
-//            if(pos.x < -threshold){
-//                vel.x = fabsf(vel.x) * reflection;
-//                data.phys.AddRestrictVector(Vector3(1.0f,0.0f,0.0f));
-//                pos.x += (-threshold - pos.x) * 2.0f;
-//            } else if( threshold < pos.x){
-//                vel.x = fabsf(vel.x) * -reflection;
-//                data.phys.AddRestrictVector(Vector3(-1.0f,0.0f,0.0f));
-//                pos.x += (threshold - pos.x) * 2.0f;
-//
-//            }
-//            if(pos.y < -threshold){
-//                vel.y = fabsf(vel.y) * reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,1.0f,0.0f));
-//                pos.y += (-threshold - pos.y) * 2.0f;
-//            } else if( threshold < pos.y){
-//                vel.y = fabsf(vel.y) * -reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,-1.0f,0.0f));
-//                pos.y += (threshold - pos.y) * 2.0f;
-//            }
-//            if(pos.z < -threshold){
-//                vel.z = fabsf(vel.z) * reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,0.0f,1.0f));
-//                pos.z += (-threshold - pos.z) * 2.0f;
-//            } else if( threshold < pos.z){
-//                vel.z = fabsf(vel.z) * -reflection;
-//                data.phys.AddRestrictVector(Vector3(0.0f,0.0f,-1.0f));
-//                pos.z += ( threshold - pos.z) * 2.0f;
-//            }
-//            data.phys.SetPosition(pos,false);
-//            data.phys.SetVelocity(vel);
-//        }
-        
-        auto mapFixFunc = [&](float delta, auto& datas){
+        auto mapFixFunc = [](float delta, auto& datas, auto& walls){
             for(auto& data : datas){
                 for(auto& wall : walls){
                     CulcMapFix(delta, data, wall);
                 }
             }
         };
+
+        
         
 //        for(auto& data : sphereDatas){
 //            CulcDomeFix(delta, data, dome);
 //        }
         
-        mapFixFunc(delta,sphereDatas);
-        mapFixFunc(delta,capDatas);
+        static int frame = 0;
+        ++frame;
+        for (int i = 0; i < capDatas.size(); ++i) {
+            for(int j = 0; j < cubeCollisions.size(); ++j){
+                CulcMapFix(delta, capDatas[i], cubeCollisions[j], i,j,frame);
+            }
+        }
+
+        mapFixFunc(delta,sphereDatas,walls);
+        mapFixFunc(delta,capDatas,walls);
+
+        mapFixFunc(delta,capDatas,cubeCollisions);
+        mapFixFunc(delta,sphereDatas,cubeCollisions);
+        auto cubeHitCheck = [&](auto& data, auto& mesh){
+            for(int i = 0; i < cubeCollisions.size(); ++i){
+                for(int j = 0; j < data.size(); ++j){
+                    if(CollisionReturnFlag(data[j].collision, cubeCollisions[i])){
+                        if(j == 0){
+                            std::cout << i << std::endl;
+                        }
+                        cubeMeshes[i]->SetColor(hitColor);
+                        mesh[j]->SetColor(hitColor);
+                    }
+                }
+            }
+        };
         
+
+
+        
+        clock_t start = clock();
+        cubeHitCheck(sphereDatas,spheres);
+        cubeHitCheck(capDatas,caps);
+        clock_t end = clock();
+        //std::cout << "time is : ";
+        //std::cout << end - start << std::endl;
         for(auto& data : sphereDatas){
             data.phys.Fix();
         }
@@ -1310,12 +1293,15 @@ int main(int argc, const char * argv[]) {
             data.phys.Fix();
         }
         
+        
+        
         Vector3 pos;
         for(int i = 0; i < spheres.size(); ++i){
             pos = sphereDatas[i].phys.GetPosition();
             sphereDatas[i].collision.position = pos;
             spheres[i]->SetPosition(pos);
             drawer.Update(spheres[i]);
+            spheres[i]->SetColor(defaultColor);
         }
         
         for(int i = 0; i < caps.size(); ++i){
@@ -1323,15 +1309,21 @@ int main(int argc, const char * argv[]) {
             capDatas[i].collision.s.p = pos;
             caps[i]->SetPosition(pos);
             drawer.Update(caps[i]);
+            caps[i]->SetColor(defaultColor);
         }
         
         for(int i = 0; i < 6; ++i){
             drawer.Update(cubes[i]);
         }
+ 
+        for(int i = 0; i < cubeMeshes.size(); ++i){
+            drawer.Update(cubeMeshes[i]);
+            cubeMeshes[i]->SetColor(defaultColor);
+        }
         
         Vector3 distance = camera.GetOrientation() * -100.0f;
         distance.y += 5.0f;
-        camera.SetPosition(capDatas[1].phys.GetPosition() + distance);
+        //camera.SetPosition(capDatas[dataIndex].phys.GetPosition() + distance);
         
         /*
          カメラ回転

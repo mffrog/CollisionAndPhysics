@@ -276,8 +276,11 @@ namespace myTools{
             return result;
         }
         else {
-            pos1 = (endpoints[0][0] + endpoints[0][1]) * 0.5f;
-            pos2 = (endpoints[1][0] + endpoints[1][1]) * 0.5f;
+            Vector3 lhsNear = (endpoints[1][0] - endpoints[0][0]).LengthSq() < (endpoints[1][0] - endpoints[0][1]).LengthSq() ? endpoints[0][0] : endpoints[0][1];
+            Vector3 rhsNear = (endpoints[0][0] - endpoints[1][0]).LengthSq() < (endpoints[0][0] - endpoints[1][1]).LengthSq() ? endpoints[1][0] : endpoints[1][1];
+            Vector3 result = (lhsNear + rhsNear) * 0.5f;
+            pos1 = CastToLine(lhs, result);
+            pos2 = CastToLine(rhs, result);
             return (pos1 + pos2) * 0.5f;
         }
     }
@@ -1247,6 +1250,7 @@ namespace myTools{
         }
         
         Vector3 pos = cylinder.collision.line.p;
+        
         if(!IsFront(plane, pos)){
             ret.hit = true;
             ret.time = 0.0f;
@@ -1269,14 +1273,33 @@ namespace myTools{
         }
         
         Vector3 movedPos = cylinder.phys.GetPrePos();
-        float dist = dot(plane.normal, plane.p - pos);
-        float movedDist = dot(plane.normal, plane.p - movedPos);
+//        Vector3 start = CastToPlane(plane, pos) - pos;
+//        Vector3 end = CastToPlane(plane, movedPos) - movedPos;
+//        Vector3 vel = end - start;
+//        float a = vel.LengthSq();
+//        float b = dot(start,vel);
+//        float c = start.LengthSq() - cylinder.collision.radius * cylinder.collision.radius;
+//        float ans = b * b - a * c;
+//        if(ans < 0 || a == 0.0f){
+//            return ret;
+//        }
+//        t = (ans < MT_EPSILON ? -b / a : (-b - sqrtf(ans)) / a);
+//        if(0.0f <= t && t <= 1.0f){
+//            ret.hit = true;
+//            ret.time = t;
+//            ret.hitPos = pos + (movedPos - pos) * t + cylinder.collision.line.v * 0.5f - plane.normal * cylinder.collision.radius;
+//            ret.hitNormal = plane.normal;
+//        }
+//        return ret;
+        
+        float dist = -dot(plane.normal, plane.p - pos);
+        float movedDist = -dot(plane.normal, plane.p - movedPos);
         float vel = movedDist - dist;
         t = (cylinder.collision.radius - dist ) / vel;
         if(0.0f <= t && t <= 1.0f){
             ret.hit = true;
             ret.time = t;
-            ret.hitPos = pos + (movedPos - pos) * t + cylinder.collision.line.v * 0.5f;
+            ret.hitPos = pos + (movedPos - pos) * t + cylinder.collision.line.v * 0.5f - plane.normal * cylinder.collision.radius;
             ret.hitNormal = plane.normal;
         }
         return ret;
@@ -1325,7 +1348,7 @@ namespace myTools{
         HitData ret;
         Vector3 spherePos = sphere.collision.position;
         Vector3 squareNormal = square.GetNormal();
-        Vector3 sphereMovedPod = sphere.phys.GetPrePos();
+        Vector3 sphereMovedPos = sphere.phys.GetPrePos();
         PlaneCollision squarePlane(square.p[0], squareNormal);
         
         if(SupSquareSphereColl(square, sphere.collision, ret.hitPos)){
@@ -1333,9 +1356,13 @@ namespace myTools{
             ret.time = 0.0f;
             ret.length = sphere.collision.radius - Distance(sphere.collision.position, squarePlane);
             ret.hitNormal = squareNormal;
+            return ret;
         }
         
         ret = StaticCollision(sphere, squarePlane);
+        if(!ret.hit){
+            return ret;
+        }
         if(ret.hit){
             if(CollisionReturnFlag(square, ret.hitPos)){
                 return ret;
@@ -1343,7 +1370,7 @@ namespace myTools{
             ret.hit = false;
         }
         
-        Vector3 sphereVel = sphereMovedPod - spherePos;
+        Vector3 sphereVel = sphereMovedPos - spherePos;
         CapsuleCollision sweepSphere(sphere.collision.radius, spherePos,sphereVel);
         
         std::vector<Segment> sides = square.GetSides();
@@ -1376,10 +1403,6 @@ namespace myTools{
             }
         }
         
-        //        if(ret.hit && ret.time < MT_EPSILON){
-        //            Vector3 normed = dot(ret.hitPos - (spherePos + ret.time * sphereVel),squareNormal) * squareNormal;
-        //            ret.length = sphere.collision.radius - normed.Length();
-        //        }
         return ret;
     }
     
@@ -1395,15 +1418,14 @@ namespace myTools{
         //面と平行な場合
         if(fabsf(dot(squNormal, cylLine.v)) < MT_EPSILON){
             bool backFlag = false;
-            if(Distance(squPlane, cylLine.p) > cylinder.collision.radius){
+            if(dot(squPlane.normal,cylLine.p - squPlane.p) < 0){
                 backFlag = true;
                 ret = StaticCollision(cylinder, PlaneCollision(squPlane.p, -squPlane.normal));
             }
             //平面と衝突時に衝突線がスクエアと交差していれば衝突点を算出してそのまま返す
             Vector3 cylVel = CulcVel(cylinder.phys);
             Vector3 castLinePos = CastToPlane(squPlane, cylLine.p + cylVel * ret.time);
-            Vector3 castLineEndPos = CastToPlane(squPlane, cylLine.p + cylVel * ret.time + cylLine.v);
-            Line castLine(castLinePos, castLineEndPos - castLinePos);
+            Line castLine(castLinePos, cylLine.v);
             std::vector<Segment> sides = square.GetSides();
             float t[2];
             Vector3 buf;
@@ -1430,7 +1452,7 @@ namespace myTools{
                 float tmp;
                 float minDist = 100000.0f;
                 const Vector3* hitVert[2];
-                const std::vector<Point>& verts = square.GetPoints();
+                const std::vector<Point> verts = square.GetPoints();
                 for(int i = 0; i < 4; ++i){
                     tmp = Distance(verts[i], cylPlane);
                     if(tmp <= minDist){
@@ -1441,6 +1463,7 @@ namespace myTools{
                             hitVert[0] = &verts[i];
                             hitVert[1] = nullptr;
                         }
+                        minDist = tmp;
                     }
                 }
                 if(hitVert[1]){
@@ -1483,7 +1506,7 @@ namespace myTools{
         PlaneCollision capMovePlane(capsule.collision.s.p,Normalize(cross(capsule.collision.s.v, capVel)));
         HitData sphereHitData[2];
         
-        auto CollEndPosSpheres = [&](HitData* res){
+        auto CollEndPosSpheres = [&](HitData*& res){
             //端点の球との判定(ここから)
             if(CollisionReturnFlag(sweepStartSphere, square)){
                 sphereHitData[0] = StaticCollision(MoveCollData<myTools::SphereCollision>(SphereCollision(radius, capsule.collision.s.p),capsule.phys), square);
@@ -1520,53 +1543,20 @@ namespace myTools{
         
         const std::vector<Segment>& sides = square.GetSides();
         MoveCollData<CylinderCollision> capCylinder(CylinderCollision(radius, capsule.collision.s),capsule.phys);
+        HitData cylHitdata = StaticCollision(capCylinder, square);
+        if(!cylHitdata.hit){
+            return cylHitdata;
+        }
         //カプセルが面と平行なとき
         if(fabsf(dot(capsule.collision.s.v,square.GetNormal())) < MT_EPSILON){
-            HitData cylHitdata = StaticCollision(capCylinder, square);
-            if(cylHitdata.hit){
-                //衝突点の算出
-                Vector3 onHitPos = capsule.collision.s.p + capVel * cylHitdata.time;
-                PlaneCollision squPlane(square.p[0],square.GetNormal());
+            //衝突点の算出
+            Vector3 onHitPos = capsule.collision.s.p + capVel * cylHitdata.time;
+            PlaneCollision squPlane(square.p[0],square.GetNormal());
+            if(Distance(onHitPos,squPlane) < capsule.collision.radius){
+                //辺か線分と衝突
                 Segment castSegment(CastToPlane(squPlane, onHitPos),capsule.collision.s.v);
-                float t[2];
                 Vector3 buf;
                 Vector3 lineHitPos[2];
-                int hitCount = 0;
-                bool para = false;
-                //衝突時シリンダーが辺、頂点、面のどれと衝突したか調べる
-                //まず面
-                for(int i = 0; i < 4; ++i){
-                    if(SupLineLineColl(castSegment, sides[i], t[0], t[1], buf)){
-                        if(IsParallel(castSegment.v, sides[i].v)){
-                            para = true;
-                            continue;
-                        }
-                        else {
-                            if(0.0f <= t[0] && t[0] <= 1.0f &&
-                               0.0f <= t[1] && t[1] <= 1.0f){
-                                lineHitPos[hitCount] = buf;
-                                ++hitCount;
-                            }
-                        }
-                    }
-                }
-                switch (hitCount) {
-                    case 1:
-                        cylHitdata.hitPos = (lineHitPos[0] +
-                                             (CollisionReturnFlag(square, castSegment.p) ? castSegment.p: castSegment.p + castSegment.v));
-                        return cylHitdata;
-                        break;
-                    case 2:
-                        cylHitdata.hitPos = (lineHitPos[0] + lineHitPos[1]) * 0.5f;
-                        return cylHitdata;
-                    default:
-                        if(para){
-                            cylHitdata.hitPos = (castSegment.p + castSegment.v * 0.5f);
-                            return cylHitdata;
-                        }
-                        break;
-                }
-                //面の判定終わり
                 //辺と当たっているのか頂点と当たっているのか調べる
                 //衝突時線との距離を測って一番近い点を探す
                 //近い点が２つあればその2点の線分との中点がカプセルのシリンダー内かどうか判定
@@ -1590,6 +1580,7 @@ namespace myTools{
                                 hitPoints[1] = nullptr;
                             }
                         }
+                        dist = tmp;
                     }
                 }
                 //2点当たっている場合
@@ -1614,52 +1605,112 @@ namespace myTools{
                 else {
                     return HitData();
                 }
-                
             }
-            //シリンダーが当たっていなかったら
             else {
-                return HitData();
-            }
-        }
-        else {
-            HitData sidesHitData[4] = {
-                Distance(sides[0], capMovePlane) <= radius ? StaticCollision(capCylinder, sides[0]) : HitData(),
-                Distance(sides[1], capMovePlane) <= radius ? StaticCollision(capCylinder, sides[1]) : HitData(),
-                Distance(sides[2], capMovePlane) <= radius ? StaticCollision(capCylinder, sides[2]) : HitData(),
-                Distance(sides[3], capMovePlane) <= radius ? StaticCollision(capCylinder, sides[3]) : HitData(),
-            };
-            
-            Segment onHitSeg(capsule.collision.s);
-            bool culcSphere = false;
-            for(int i = 0; i < 4; ++i){
-                if(sidesHitData[i].hit){
-                    onHitSeg.p = capsule.collision.s.p + capVel * sidesHitData[i].time;
-                    if(!IsInside(onHitSeg, sidesHitData[i].hitPos)){
-                        culcSphere = true;
-                        continue;
-                    }
-                    if(ret == nullptr){
-                        ret = &sidesHitData[i];
-                    }
-                    else {
-                        if(sidesHitData[i].time < ret->time){
-                            ret = &sidesHitData[i];
+                //面と衝突
+                Segment castSegment(CastToPlane(squPlane, onHitPos),capsule.collision.s.v);
+                int inSideCount = 0;
+                if(CollisionReturnFlag(square, castSegment.p)){
+                    ++inSideCount;
+                }
+                if(CollisionReturnFlag(square, castSegment.GetEndPoint())){
+                    ++inSideCount;
+                }
+                if(inSideCount == 2){
+                    cylHitdata.hitPos = castSegment.p + castSegment.v * 0.5f;
+                    return cylHitdata;
+                }
+                
+                float t[2];
+                Vector3 buf;
+                Vector3 lineHitPos[2];
+                int hitCount = 0;
+                bool para = false;
+                for(int i = 0; i < 4; ++i){
+                    if(SupLineLineColl(castSegment, sides[i], t[0], t[1], buf)){
+                        if(IsParallel(castSegment.v, sides[i].v)){
+                            para = true;
+                            continue;
+                        }
+                        else {
+                            if(0.0f <= t[0] && t[0] <= 1.0f &&
+                               0.0f <= t[1] && t[1] <= 1.0f){
+                                lineHitPos[hitCount] = buf;
+                                ++hitCount;
+                            }
                         }
                     }
                 }
+                switch (hitCount) {
+                    case 1:
+                        cylHitdata.hitPos = (lineHitPos[0] +
+                                             (CollisionReturnFlag(square, castSegment.p) ? castSegment.p: castSegment.p + castSegment.v * 0.5f));
+                        return cylHitdata;
+                        break;
+                    case 2:
+                        cylHitdata.hitPos = (lineHitPos[0] + lineHitPos[1]) * 0.5f;
+                        return cylHitdata;
+                    default:
+                        if(para){
+                            cylHitdata.hitPos = (castSegment.p + castSegment.v * 0.5f);
+                            return cylHitdata;
+                        }
+                        Physics tmp;
+                        tmp.SetPosition(capEndPos,false);
+                        tmp.SetPrePos(capEndPos + capVel);
+                        HitData data[2] = {
+                            StaticCollision(MoveCollData<myTools::SphereCollision>(SphereCollision(capsule.collision.radius, capsule.collision.s.p),capsule.phys), square),
+                            StaticCollision(MoveCollData<SphereCollision>(SphereCollision(capsule.collision.radius, capEndPos),tmp), square),
+                        };
+                        if(data[0].hit){
+                            if(data[1].hit){
+                                if(data[0].time < data[1].time){
+                                    return data[0];
+                                }
+                                else {
+                                    return data[1];
+                                }
+                            }
+                            else {
+                                return data[0];
+                            }
+                        }
+                        else {
+                            return data[1];
+                        }
+                        
+                        break;
+                }
             }
-            if(ret){
-                return *ret;
+        }
+        //シリンダーが面と平行じゃない
+        Segment onHitSeg(capsule.collision.s.p + capVel * cylHitdata.time,capsule.collision.s.v);
+        if(IsInside(onHitSeg, cylHitdata.hitPos)){
+            return cylHitdata;
+        }
+        
+        Physics tmp;
+        tmp.SetPosition(capEndPos,false);
+        tmp.SetPrePos(capEndPos + capVel);
+        HitData data[2] = {
+            StaticCollision(MoveCollData<myTools::SphereCollision>(SphereCollision(capsule.collision.radius, capsule.collision.s.p),capsule.phys), square),
+            StaticCollision(MoveCollData<SphereCollision>(SphereCollision(capsule.collision.radius, capEndPos),tmp), square),
+        };
+        if(data[0].hit){
+            if(data[1].hit){
+                if(data[0].time < data[1].time){
+                    return data[0];
+                }
+                else {
+                    return data[1];
+                }
             }
             else {
-                if(culcSphere){
-                    CollEndPosSpheres(ret);
-                    if(ret){
-                        return *ret;
-                    }
-                }
-                return HitData();
+                return data[0];
             }
+        }
+        else {
+            return data[1];
         }
     }
 //    {
@@ -1865,9 +1916,6 @@ namespace myTools{
         Vector3 capEndPos = capPos + capsule.collision.s.v;
         Vector3 capVel = CulcVel(capsule.phys);
         float capRad = capsule.collision.radius;
-        Vector3 radVel = Normalize(capVel) * capRad;
-        Vector3 capThinVec = Normalize(cross(capVel, capsule.collision.s.v)) * capRad;
-        Vector3 segLength = capVel + radVel;
 
         std::vector<Point> verts = aabb.GetPoints();
         std::vector<SquareCollision> squares{
@@ -1878,21 +1926,91 @@ namespace myTools{
             SquareCollision(verts[4], verts[0], verts[3], verts[7],false),
             SquareCollision(verts[1], verts[5], verts[6], verts[2],false),
         };
-        
+//        HitData r;
+//        HitData b;
+//        for(int i = 0; i < 6; ++i){
+//            if(dot(capVel, cross(squares[i].p[1] - squares[i].p[0], squares[i].p[2] - squares[i].p[1])) > 0){
+//                continue;
+//            }
+//            b = StaticCollision(capsule, squares[i]);
+//            if(b.hit){
+//                if(!r.hit){
+//                    r = b;
+//                }
+//                else {
+//                    if(b.time < r.time){
+//                        r = b;
+//                    }
+//                }
+//            }
+//        }
+//
+//        return r;
         
         PlaneCollision squPlane;
         float t;
         Vector3 hitPos;
-        float time = 10000.0f;
         const SquareCollision* hitSquare = nullptr;
-        
-        Segment sweepSegments[4] = {
-            Segment(capPos + capThinVec - radVel,segLength),
-            Segment(capEndPos + capThinVec - radVel, segLength),
-            Segment(capPos - capThinVec - radVel,segLength),
-            Segment(capEndPos - capThinVec - radVel,segLength)
+
+        Line moveLine[2] = {
+            {capPos,capVel},
+            {capEndPos,capVel}
         };
-    
+        
+        PlaneCollision ptmp;
+        Vector3 squNormal;
+        t = 0.0f;
+        float d[2] ={ 0.0f, 0.0f};
+        float param;
+        SquareCollision* lineHitSquare[2] = {nullptr, nullptr};
+        auto check = [&](int index, SquareCollision& square)->bool{
+            SupPlaneLineColl(ptmp, moveLine[index], param, hitPos);
+            if(d[index] < param){
+                d[index] = param;
+                lineHitSquare[index] = &square;
+                return true;
+            }
+            return false;
+        };
+        
+        HitData ret;
+        HitData buf;
+        
+        for(int i = 0; i < 6; ++i){
+            squNormal = cross(squares[i].p[1] - squares[i].p[0], squares[i].p[2] - squares[i].p[1]);
+            if(dot(squNormal, capVel) < 0){
+                ptmp.p = squares[i].p[0];
+                ptmp.normal = squNormal;
+                check(0,squares[i]);
+                check(1,squares[i]);
+            }
+        }
+        SquareCollision* sqPointer = nullptr;
+        //この判定は要らんと思うけど一応
+        if(d[0] > MT_EPSILON){
+            if(d[1] > MT_EPSILON){
+                if(d[0] < d[1]){
+                    sqPointer = lineHitSquare[0];
+                }
+                else {
+                    sqPointer = lineHitSquare[1];
+                }
+            }
+            else {
+                sqPointer = lineHitSquare[0];
+            }
+        }
+        else if(d[1] > MT_EPSILON){
+            sqPointer = lineHitSquare[1];
+        }
+
+        if(sqPointer){
+            sqPointer->CulcNormal();
+            return StaticCollision(capsule, *sqPointer);
+        }
+        return HitData();
+        
+        
 //        //衝突スクエアを探す
 //        for(SquareCollision& square : squares){
 //            squPlane.p = square.p[0];
@@ -1958,6 +2076,8 @@ namespace myTools{
                 data[1].hit = false;
             }
             return data[1];
+        
+        
 //        }
     }
     
