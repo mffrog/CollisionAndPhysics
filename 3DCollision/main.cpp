@@ -366,7 +366,7 @@ int main(int argc, const char * argv[]) {
     //SphereCollision sphereColl(1.0f,sphereData.phys.GetPosition());
 
     //srand((unsigned int)time(NULL));
-    srand(70);
+    srand(700);
     
     Sphere* buf;
     std::vector<Sphere*> spheres;
@@ -399,8 +399,7 @@ int main(int argc, const char * argv[]) {
     float radius;
     
     bool useZ = true;
-    int num = 22;
-
+    
     DomeCollision dome;
     dome.minRadius = threshold * 0.8;
     dome.maxRadius = threshold + 80;
@@ -408,7 +407,7 @@ int main(int argc, const char * argv[]) {
     Vector4 hitColor(1.0f,1.0f,0.0f,1.0f);
     Vector4 defaultColor(1.0f,1.0f,1.0f,1.0f);
     
-    cBuf = new CapsuleMesh(4);
+    cBuf = new CapsuleMesh(6);
     radius = size ;//* (random() + 1);
     cBuf->SetRadius(radius);
     //len = Vector3(pmRandom(),pmRandom(),useZ ? pmRandom() : 0.0f) * 5.0f;
@@ -425,7 +424,7 @@ int main(int argc, const char * argv[]) {
     capsuleData.collision.radius = radius;
     capDatas.push_back(capsuleData);
 
-    cBuf = new CapsuleMesh(4);
+    cBuf = new CapsuleMesh(6);
     radius = size ;//* (random() + 1);
     cBuf->SetRadius(radius);
     //len = Vector3(pmRandom(),pmRandom(),useZ ? pmRandom() : 0.0f) * 5.0f;
@@ -443,33 +442,35 @@ int main(int argc, const char * argv[]) {
     capsuleData.collision.radius = radius;
     capDatas.push_back(capsuleData);
     
+    int num = 15;
     
     std::vector<Cube*> cubeMeshes;
     std::vector<AABBCollision> cubeCollisions;
     Cube* cubePointer;
     AABBCollision cubeCollBuf;
     for(int i = 0; i < num; ++i){
-//        cBuf = new CapsuleMesh(3);
-//        radius = size ;//* (random() + 1);
-//        cBuf->SetRadius(radius);
-//        //len = Vector3(pmRandom(),pmRandom(),useZ ? pmRandom() : 0.0f) * 5.0f;
-//        cBuf->SetLength(len);
-//        cBuf->SetColor({random(),random(),random(),1.0f});
-//        caps.push_back(cBuf);
-//        drawer.AddMesh(cBuf);
-//        sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold : 0.0f);
-//        capsuleData.phys.SetPosition(sPos,false);
-//        capsuleData.phys.SetVelocity(Vector3(pmRandom(), pmRandom(), useZ ? pmRandom() : 0.0f) * 10.0f);
-//        capsuleData.phys.SetMass(radius * 5.0f);
-//        capsuleData.collision.s.p = sPos;
-//        capsuleData.collision.s.v = len;
-//        capsuleData.collision.radius = radius;
-//        capDatas.push_back(capsuleData);
+        cBuf = new CapsuleMesh(6);
+        radius = size ;//* (random() + 1);
+        cBuf->SetRadius(radius);
+        len = Vector3(pmRandom(),pmRandom(),useZ ? pmRandom() : 0.0f) * 5.0f;
+        cBuf->SetLength(len);
+        cBuf->SetColor({random(),random(),random(),1.0f});
+        caps.push_back(cBuf);
+        drawer.AddMesh(cBuf);
+        sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold : 0.0f);
+        capsuleData.phys.SetPosition(sPos,false);
+        capsuleData.phys.SetVelocity(Vector3(pmRandom(), pmRandom(), useZ ? pmRandom() : 0.0f) * 10.0f);
+        capsuleData.phys.SetMass(radius * 5.0f);
+        capsuleData.collision.s.p = sPos;
+        capsuleData.collision.s.v = len;
+        capsuleData.collision.radius = radius;
+        capDatas.push_back(capsuleData);
         
         cubePointer = new Cube();
         sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold : 0.0f);
         float cubeSize = size * (random()) * 10;
         Vector3 cubeWid(random() * cubeSize,random() * cubeSize, random() * cubeSize);
+        //cubeWid[rand()%3] /= cubeSize;
         cubePointer->SetScale(cubeWid);
         cubePointer->SetPosition(sPos);
         cubeMeshes.push_back(cubePointer);
@@ -478,23 +479,23 @@ int main(int argc, const char * argv[]) {
         cubeCollBuf.min = -cubeWid + sPos;
         cubeCollisions.push_back(cubeCollBuf);
         
-        float rate = 0.8f;
-        buf = new Sphere(8);
-        radius = size ;//* (random() + 1);
-        buf->SetRadius(radius);
-        buf->SetColor({random(),random(),random(),1.0f});
-
-        //buf->SetColor({1,0,1,1});
-        spheres.push_back(buf);
-        drawer.AddMesh(buf);
-        sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold: 0.0f) * rate;
-        print(sPos);
-        sphereData.phys.SetPosition(sPos,false);
-        sphereData.phys.SetVelocity(Vector3(pmRandom(), 0.0f, useZ ? pmRandom() : 0.0f) * 10.0f);
-        sphereData.phys.SetMass(radius * 3);
-        sphereData.collision.position = sPos;
-        sphereData.collision.radius = radius;
-        sphereDatas.push_back(sphereData);
+//        float rate = 0.8f;
+//        buf = new Sphere(8);
+//        radius = size ;//* (random() + 1);
+//        buf->SetRadius(radius);
+//        buf->SetColor({random(),random(),random(),1.0f});
+//
+//        //buf->SetColor({1,0,1,1});
+//        spheres.push_back(buf);
+//        drawer.AddMesh(buf);
+//        sPos = Vector3(pmRandom() * threshold, pmRandom() * threshold, useZ ? pmRandom() * threshold: 0.0f) * rate;
+//        print(sPos);
+//        sphereData.phys.SetPosition(sPos,false);
+//        sphereData.phys.SetVelocity(Vector3(pmRandom(), 0.0f, useZ ? pmRandom() : 0.0f) * 10.0f);
+//        sphereData.phys.SetMass(radius * 3);
+//        sphereData.collision.position = sPos;
+//        sphereData.collision.radius = radius;
+//        sphereDatas.push_back(sphereData);
     }
     
  
@@ -507,7 +508,7 @@ int main(int argc, const char * argv[]) {
 //    Vector3 cameraDirection = Normalize(Vector3() - cameraPosition);
 //    Vector3 UpVector = {0,1,0};
     
-    float speed = 2.0f;
+    float speed = 1.0f;
     
     float rad = M_PI / 240;
     bool mode;
@@ -602,6 +603,10 @@ int main(int argc, const char * argv[]) {
         }
     };
     
+    
+    bool skip = false;
+
+    
     KeyCallback::keyfunc = keyFunc;
     int dataIndex = 0;
     static bool cursorMode = true;
@@ -691,7 +696,8 @@ int main(int argc, const char * argv[]) {
         
         if(KEY_FLAG(SPACE)){
             if(defence){
-                ++dataIndex;
+                skip = !skip;
+                //++dataIndex;
 //                mode1 = !mode1;
 //                if(mode1){
 //                    drawer.LineMode();
@@ -728,16 +734,19 @@ int main(int argc, const char * argv[]) {
 //                data.phys.AddAcceleration(impulsePos[1] * (power / (pos - impulsePos[2]).Length()));
 //                data.phys.AddAcceleration(impulsePos[0] * (power / (pos - impulsePos[3]).Length()));
 //            }
-            capDatas[1].phys.AddAcceleration(Vector3(0,0,-1) * speed * power);
+            //capDatas[1].phys.AddAcceleration(Vector3(0,0,-1) * speed * power);
+            speed += 0.01f;
             //dome.position += Vector3(0,0,-1) * speed;
         }
         if(KEY_FLAG(K)){
+            speed -= 0.01f;
             //dome.position += Vector3(0,0,1) * speed;
-            capDatas[1].phys.AddAcceleration(Vector3(0,0,1) * speed * power);
+            //capDatas[1].phys.AddAcceleration(Vector3(0,0,1) * speed * power);
         }
         if(KEY_FLAG(J)){
+            skip = false;
             //dome.position += Vector3(-1,0,0) * speed;
-            capDatas[1].phys.AddAcceleration(Vector3(-1,0,0) * speed * power);
+            //capDatas[1].phys.AddAcceleration(Vector3(-1,0,0) * speed * power);
         }
         if(KEY_FLAG(L)){
             //dome.position += Vector3(1,0,0) * speed;
@@ -995,12 +1004,17 @@ int main(int argc, const char * argv[]) {
         glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        
+        
         cameraFunc();
         
         float delta = 1.0f / 60.0f;
         
         Vector3 gravity(0.0f,-9.8f * 15.0f,0.0f);
         gravity = Vector3();
+        
+        if(!skip){
+        
         for(auto& data : sphereDatas){
             data.phys.AddAcceleration(gravity);
             data.phys.Update(delta, true);
@@ -1011,6 +1025,7 @@ int main(int argc, const char * argv[]) {
             data.phys.Update(delta, true);
         }
         
+        }
 //        static int counter = 0;
 //        static int interval = 10;
 //        if(counter <= 0){
@@ -1250,24 +1265,37 @@ int main(int argc, const char * argv[]) {
 //        }
         
         static int frame = 0;
-        ++frame;
+        if(!skip){
+            ++frame;
+        }
         for (int i = 0; i < capDatas.size(); ++i) {
             for(int j = 0; j < cubeCollisions.size(); ++j){
                 CulcMapFix(delta, capDatas[i], cubeCollisions[j], i,j,frame);
             }
         }
-
         mapFixFunc(delta,sphereDatas,walls);
         mapFixFunc(delta,capDatas,walls);
 
-        mapFixFunc(delta,capDatas,cubeCollisions);
-        mapFixFunc(delta,sphereDatas,cubeCollisions);
+        if(!skip){
+            for(auto& data : sphereDatas){
+                data.phys.Fix();
+            }
+            
+            for(auto& data : capDatas){
+                data.phys.Fix();
+            }
+        }
+        //mapFixFunc(delta,capDatas,cubeCollisions);
+        
         auto cubeHitCheck = [&](auto& data, auto& mesh){
             for(int i = 0; i < cubeCollisions.size(); ++i){
                 for(int j = 0; j < data.size(); ++j){
                     if(CollisionReturnFlag(data[j].collision, cubeCollisions[i])){
-                        if(j == 0){
-                            std::cout << i << std::endl;
+                        //skip = true;
+                        std::cout << "obj is " << j << " : aabb is " << i << std::endl;
+                        if(j != 1 && frame > 100){
+                            skip = true;
+                            std::cout << "frame : " << frame << std::endl;
                         }
                         cubeMeshes[i]->SetColor(hitColor);
                         mesh[j]->SetColor(hitColor);
@@ -1277,23 +1305,8 @@ int main(int argc, const char * argv[]) {
         };
         
 
-
-        
-        clock_t start = clock();
-        cubeHitCheck(sphereDatas,spheres);
-        cubeHitCheck(capDatas,caps);
-        clock_t end = clock();
         //std::cout << "time is : ";
         //std::cout << end - start << std::endl;
-        for(auto& data : sphereDatas){
-            data.phys.Fix();
-        }
-        
-        for(auto& data : capDatas){
-            data.phys.Fix();
-        }
-        
-        
         
         Vector3 pos;
         for(int i = 0; i < spheres.size(); ++i){
@@ -1310,6 +1323,15 @@ int main(int argc, const char * argv[]) {
             caps[i]->SetPosition(pos);
             drawer.Update(caps[i]);
             caps[i]->SetColor(defaultColor);
+        }
+        
+        clock_t start = clock();
+        cubeHitCheck(sphereDatas,spheres);
+        cubeHitCheck(capDatas,caps);
+        clock_t end = clock();
+        
+        for(auto& capmesh : caps){
+            drawer.Update(capmesh);
         }
         
         for(int i = 0; i < 6; ++i){
