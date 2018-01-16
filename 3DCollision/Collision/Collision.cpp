@@ -1138,14 +1138,10 @@ namespace myTools {
     
     //SphereCollision and LineCollision
     bool CollisionReturnFlag(const SphereCollision& s, const Line& l){
-        Vector3 spherePos = s.position - l.p;
-        float A = dot(l.v, l.v);
-        float B = dot(l.v, spherePos);
-        float C = dot(spherePos, spherePos) - s.radius * s.radius;
-        return (B * B - 4 * A * C) >= 0;
+        return DistanceSq(s.position, l) <= s.radius * s.radius;
     }
     bool CollisionReturnFlag(const Line& l, const SphereCollision& s){
-        return CollisionReturnFlag(s, l);
+        return DistanceSq(s.position, l) <= s.radius * s.radius;
     }
     
     CollisionData Collision(const SphereCollision& s, const Line& l){

@@ -1,3 +1,4 @@
+
 //
 //  Physics.h
 //  3DCollision
@@ -335,12 +336,10 @@ namespace myTools {
     //衝突方向の速度は消す
     template<typename Ty1, typename Ty2>
     void CulcMapFix(float delta,Ty1& lhs,const Ty2& rhs, int index = 0, int index2 = 0, int frame = 0){
-        if( index == 14 && index2 == 4 && frame > 1535){
+        if( index == 0 && index2 == 15 && frame == 100){
             std::cout << "check items" << frame << std::endl;
         }
         HitData data = StaticCollision(lhs, rhs);
-        StaticCollision(lhs, rhs);
-        StaticCollision(lhs, rhs);
         if(!data.hit){
             return;
         }
@@ -358,9 +357,10 @@ namespace myTools {
         //法線の向きを壁からの向きに定義していないのにやってたからバグってた
         //Staticとの判定は法線方向はStaticからの向きとする
         float t = dot(data.hitNormal, lhsPreVel);
-        float reflection = 2.0f;
+        float reflection = 1.0f;
+        reflection += 1.0f;
         if(t < 0){
-            lhsPreVel -= t * data.hitNormal * reflection;
+            lhsPreVel -= t * data.hitNormal * ( reflection);
             lhsVel -= dot(data.hitNormal, lhsVel) * data.hitNormal * reflection;
             lhs.phys.AddRestrictVector(data.hitNormal);
         }
